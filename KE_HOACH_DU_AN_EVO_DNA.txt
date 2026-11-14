@@ -1,0 +1,212 @@
+================================================================================
+              KẾ HOẠCH PHÁT TRIỂN DỰ ÁN & LỘ TRÌNH DEMO: EVO-DNA
+        Thể loại: Kinh dị sinh tồn / Giải đố góc nhìn thứ nhất (3D First-Person POV)
+================================================================================
+
+I. ĐÁNH GIÁ TÀI NGUYÊN HIỆN CÓ TRONG PROJECT (CURRENT ASSETS)
+--------------------------------------------------------------------------------
+Hiện tại trong thư mục `Assets/evo-dna` của nhóm đã có sẵn các tài nguyên rất tốt
+để bắt đầu làm ngay một bản Vertical Slice (Demo chơi thử hoàn chỉnh Tầng 1):
+
+1. Môi trường (`Assets/evo-dna/Environement/Demo_moitruong_Tang1_1211.fbx`):
+   - Đã bóc tách đầy đủ 105 Texture và gắn chuẩn 61 Material.
+   - Đã có sẵn các vật thể quan trọng phục vụ trực tiếp cho Gameplay:
+     + Phòng thí nghiệm (`ChemLab`), Bàn mổ (`DissectionTable`), Giường bệnh (`Mattress`),
+       Ghế truyền dịch (`DripChair`).
+     + Tủ sắt (`M_Locker`), Tủ y tế (`M_LockerMed`), Kệ đồ (`M_Shelfs`) -> Dùng làm nơi
+       giấu đồ và điểm Ẩn Nấp (Hiding Spot).
+     + Cửa điện (`electric_door`, `Door.001`), Khung cửa (`doorFrame`), Bảng mã (`keyPad`)
+       -> Dùng cho hệ thống khóa cửa, Thẻ từ và Giải đố mật mã.
+     + Thang máy (`ElevatorFloor`, `ElevatorMetal`, `ElevatorScreen`, `Buttons`) -> Điểm
+       mục tiêu cuối Tầng 1 để chuyển sang Tầng Hầm / Tầng 2.
+
+2. Quái vật (`Assets/evo-dna/Monster/Parasite L Starkie.fbx`):
+   - Đã có đầy đủ Model, Material (Diffuse + Normal + Specular) và 5 Animation:
+     + `Mutant Walking` (Đi tuần tra / Tìm kiếm)
+     + `Mutant Run` (Rượt đuổi khi phát hiện người chơi hoặc nghe tiếng động lớn)
+     + `Mutant Swiping` (Đòn đánh cào cận chiến)
+     + `Jump Attack` (Đòn vồ tầm trung / Jumpscare)
+     + `Mutant Dying` (Chết -> Kích hoạt cho phép người chơi Hấp thụ DNA)
+
+3. Lợi thế của góc nhìn thứ nhất (First-Person POV):
+   - KHÔNG CẦN model nhân vật chính toàn thân phức tạp.
+   - Chỉ cần Capsule `CharacterController` + `Main Camera` đặt ngang tầm mắt + `Spot Light`
+     làm Đèn pin + UI tâm ngắm (Crosshair) và 2 cánh tay (hoặc vũ khí gắn trước Camera).
+
+
+================================================================================
+II. NÊN LÀM GÌ TRƯỚC CHO BẢN DEMO ĐẦU TIÊN? (6 HẠNG MỤC ƯU TIÊN SỐ 1)
+================================================================================
+Thay vì làm dàn trải cả 3 tầng cùng lúc, nhóm nên tập trung làm hoàn chỉnh
+"BẢN DEMO TẦNG 1 (VERTICAL SLICE - 10 ĐẾN 15 PHÚT CHƠI)" theo thứ tự 6 bước sau:
+
+BƯỚC 1: Chuẩn hóa Map Tầng 1 & Va chạm (Colliders)
+   - Bật `Generate Colliders` trong Import Settings của `Demo_moitruong_Tang1_1211.fbx`
+     (hoặc gắn BoxCollider cho Sàn, Tường, Cửa) để nhân vật không bị rơi xuyên sàn.
+   - Tách riêng các cánh cửa (`Door.001`, `electric_door`) hoặc gắn script xoay/trượt
+     để có thể đóng/mở được khi giải đố.
+   - Đồng bộ lại tỷ lệ (Scale) giữa Map Tầng 1, Nhân vật POV và Quái `Parasite L Starkie`.
+
+BƯỚC 2: Bộ điều khiển Nhân vật Góc nhìn thứ nhất (First-Person Controller) & Đèn Pin
+   - Di chuyển: `W/A/S/D`, Xoay góc nhìn theo chuột (`Mouse Look`).
+   - Chạy nhanh (`Shift`): Tăng tốc độ nhưng phát ra bán kính âm thanh lớn (`NoiseRadius`)
+     thu hút quái vật.
+   - Cúi người / Đi lén lút (`Ctrl`): Hạ chiều cao `CharacterController` và Camera xuống,
+     giảm bán kính âm thanh về gần 0 để đi qua quái Bò Trườn (Crawler).
+   - Nhảy (`Space`).
+   - Đèn pin (`Phím Q`): Bật/Tắt một `Spot Light` gắn theo góc nhìn Camera (có âm thanh
+     "tách" nhẹ khi bấm).
+
+BƯỚC 3: Hệ thống Tương tác (Raycast Interaction) & Túi đồ (Hotbar UI)
+   - Bắn 1 tia `Physics.Raycast` từ chính giữa Camera ra phía trước (tầm xa 2.5m - 3m).
+   - Khi tia chạm vào vật thể có gắn interface `IInteractable`:
+     + Hiện tên vật thể / gợi ý trên màn hình (VD: "Nhặt Dao mổ", "Nhặt Cầu chì",
+       "Nhập mật mã Keypad", "Trốn vào Tủ Locker").
+   - Thanh túi đồ (Inventory Bar) ở chính giữa cạnh dưới màn hình (4 - 6 ô):
+     + Hiển thị icon các món đồ đã nhặt (Thẻ từ, Cầu chì, Túi máu, Dao).
+     + Bấm số (1-5) hoặc click để sử dụng vật phẩm.
+
+BƯỚC 4: Cơ chế Ẩn Nấp (Hiding System) & Kéo đẩy vật thể
+   - Điểm ẩn nấp: Gắn script `HidingSpot` vào các tủ `M_Locker` và gầm bàn trong Tầng 1.
+   - Khi click vào điểm ẩn nấp:
+     + Chuyển vị trí Camera mượt mà (Lerp) vào bên trong tủ (nhìn hé qua khe cửa tủ)
+       hoặc xuống gầm bàn.
+     + Đặt trạng thái `Player.IsHiding = true`. Nếu quái chưa nhìn thấy người chơi chui
+       vào thì quái sẽ mất dấu và bỏ đi.
+
+BƯỚC 5: AI Quái Vật (`Parasite L Starkie`) bằng NavMesh & State Machine
+   - Bake `NavMeshSurface` cho toàn bộ mặt sàn Tầng 1.
+   - Lập trình AI Quái vật với 5 trạng thái khớp với 5 file FBX Animation sẵn có:
+     1. `Patrol` (Dùng anim `Mutant Walking`): Đi tuần qua các điểm Waypoint ở hành lang.
+     2. `Investigate` (Dùng anim `Mutant Walking` nhanh): Khi người chơi chạy (`Shift`)
+        hoặc làm rơi đồ trong tầm nghe -> Quái di chuyển tới vị trí phát ra tiếng động.
+     3. `Chase` (Dùng anim `Mutant Run`): Khi nhìn thấy người chơi hoặc nghe tiếng động
+        ở cự ly gần -> Rượt đuổi tốc độ cao.
+     4. `Attack` (Dùng anim `Mutant Swiping` / `Jump Attack`): Khi áp sát người chơi ->
+        Ra đòn trừ HP (kèm hiệu ứng đỏ màn hình & rung Camera).
+     5. `Dead` (Dùng anim `Mutant Dying`): Khi HP quái về 0 -> Ngã xuống và phát sáng
+        hạt DNA chờ người chơi tới hấp thụ.
+
+BƯỚC 6: Chiến đấu (Dao 3 lần đâm / Súng / Hồi máu) & Sao Chép Năng Lực (Ability Copy)
+   - Vũ khí cận chiến (`Phím E`): Rút dao, `Chuột trái` để đâm. Có biến `durability = 3`,
+     mỗi lần đâm trúng giảm 1, về 0 dao gãy và biến mất khỏi túi đồ.
+   - Hồi máu (Phím tắt nhanh): Kiểm tra đủ 3 điều kiện (`HP < MaxHP` + `Không bị quái đánh`
+     + `Có túi máu trong Inventory`) -> Hồi máu.
+   - Sao chép năng lực (Ability Copy):
+     + Sau khi hạ quái, lại gần xác quái bấm tương tác để "Hấp thụ DNA".
+     + Lưu 1 năng lực duy nhất vào slot `CurrentAbility` (Ghi đè nếu hấp thụ năng lực mới).
+     + Demo ngay năng lực 1: **Dash (Lướt nhanh)** hoặc **Tàng hình 3-5 giây** để vượt
+       qua bầy quái ở hành lang chính tiến vào Thang máy.
+
+
+================================================================================
+III. KẾ HOẠCH CHI TIẾT DỰ ÁN THEO TỪNG GIAI ĐOẠN (PROJECT ROADMAP)
+================================================================================
+
+--------------------------------------------------------------------------------
+GIAI ĐOẠN 1: NỀN TẢNG CỐT LÕI - CORE MECHANICS (Tuần 1 - 2)
+--------------------------------------------------------------------------------
+Mục tiêu: Đi lại mượt mà trong Tầng 1, tương tác được với cửa, đèn pin và tủ đồ.
+[ ] 1.1. Setup Scene Tầng 1, Colliders sàn/tường, Ánh sáng kinh dị & Đèn nhấp nháy.
+[ ] 1.2. Code `FirstPersonController.cs` (W/A/S/D, Shift chạy, Ctrl cúi, Space nhảy,
+         Camera Look, phát sự kiện âm thanh bước chân).
+[ ] 1.3. Code `FlashlightController.cs` (Phím Q bật/tắt đèn pin, quản lý thời lượng pin,
+         chế độ chiếu đèn UV phát hiện quái tàng hình).
+[ ] 1.4. Code `InteractionSystem.cs` (Raycast từ Camera) + `PhysicsGrabber.cs` (Giữ chuột
+         trái để kéo/đẩy vật thể vật lý).
+[ ] 1.5. Code `InventoryManager.cs` & UI thanh túi đồ ở giữa dưới màn hình.
+[ ] 1.6. Code `HidingSpot.cs` (Chui vào tủ `M_Locker` / gầm bàn, khóa di chuyển, xoay góc
+         nhìn giới hạn bên trong chỗ trốn).
+
+--------------------------------------------------------------------------------
+GIAI ĐOẠN 2: CHIẾN ĐẤU, QUÁI VẬT & SAO CHÉP DNA - COMBAT & AI (Tuần 3 - 4)
+--------------------------------------------------------------------------------
+Mục tiêu: Có quái đi tuần, biết nghe tiếng động, đánh nhau, chết và sao chép kỹ năng.
+[ ] 2.1. Code `PlayerHealth.cs` & Hệ thống Trị thương (Kiểm tra điều kiện mất máu +
+         không bị tấn công + tốn bình máu) & Hệ thống Checkpoint / Mất đồ khi chết.
+[ ] 2.2. Code `WeaponController.cs`:
+         - Dao (`Phím E`): Đâm cận chiến, giới hạn 3 lần đâm là gãy.
+         - Súng (`Phím F`): Bắn Raycast (`Chuột trái`), Nạp đạn (`Chuột phải`), giới hạn đạn.
+[ ] 2.3. Thiết lập `Animator Controller` cho `Parasite L Starkie` (Nối 5 animation:
+         Idle/Walk -> Run -> Swipe/Jump Attack -> Dying).
+[ ] 2.4. Code `MonsterAI.cs` (NavMeshAgent + Thính giác nhạy bén cho Crawler Tầng 1 +
+         Tàng hình trong bóng tối cho Infiltrator Tầng 2).
+[ ] 2.5. Code `DNAAbilitySystem.cs` (Hấp thụ DNA từ quái đã hạ gục, chỉ giữ 1 kỹ năng
+         tại 1 thời điểm, tự động ghi đè kỹ năng cũ):
+         - Kỹ năng Crawler: `Dash` (Tăng vọt tốc độ di chuyển ngắn hạn) hoặc `Decoy Sound`
+           (Giả tiếng động đánh lạc hướng).
+         - Kỹ năng Infiltrator: `Invisibility` (Tàng hình 3-5 giây trước mắt quái).
+
+--------------------------------------------------------------------------------
+GIAI ĐOẠN 3: THIẾT KẾ MÀN CHƠI & GIẢI ĐỐ 3 TẦNG - LEVEL & PUZZLES (Tuần 5 - 6)
+--------------------------------------------------------------------------------
+Mục tiêu: Nối liền mạch luồng chơi (Game Flow) từ lúc tỉnh dậy đến khi phá đảo.
+[ ] 3.1. Khu vực 1 - TẦNG 1 (Sảnh Chính & Lab Sơ Cấp):
+         - Intro tỉnh dậy từ Buồng nuôi cấy vỡ kính -> Nhặt Đèn pin (1 cục pin) & Dao.
+         - Câu đố 1: Mở khóa cửa phòng Lab sơ cấp bằng `keyPad` / Thẻ từ để ra Sảnh chính.
+         - Khám phá Phòng Y tế & Kho nguyên liệu: Nhặt máu, đạn, Cầu chì & Dây điện.
+         - Mở đường xuống Tầng Hầm (Thang máy lúc này chưa có điện để lên Tầng 2).
+[ ] 3.2. Khu vực 2 - TẦNG HẦM (Trạm Năng Lượng & Khu Mẫu Vật):
+         - Thiết kế môi trường tối, lồng kính vỡ, quái rình rập.
+         - Điểm Checkpoint trước nhiệm vụ sửa máy phát điện.
+         - Nhiệm vụ Lò phản ứng / Máy phát điện: Lắp Cầu chì + Nối dây điện -> Cấp điện
+           toàn trụ sở (Đèn hành lang và Thang máy sáng lên).
+[ ] 3.3. Khu vực 3 - TẦNG 2 (Khu Hành Chính & Server - Đi bằng Thang máy):
+         - Hệ thống Thang máy hoạt động sau khi Tầng Hầm có điện.
+         - Quái Bóng Ma Sinh Học (`Infiltrator`) tàng hình -> Dùng đèn UV để soi.
+         - Phòng Server: Khôi phục dữ liệu & Cấp quyền truy cập cho Thẻ từ.
+         - Phòng Lưu trữ hồ sơ: Mở bằng Thẻ từ -> Đọc tài liệu hồ sơ mẫu vật.
+         - Phòng Giám đốc: Giải câu đố mật mã phức tạp -> Mở khóa sự thật cốt truyện
+           (NVC chính là thực thể cộng sinh với Tiến sĩ A từ 10 năm trước) & Nhận Thẻ từ
+           Lối Thoát Hiểm Tối Cao.
+
+--------------------------------------------------------------------------------
+GIAI ĐOẠN 4: ĐẤU TRÙM (SUBJECT ZERO) & HOÀN THIỆN - BOSS & POLISH (Tuần 7 - 8)
+--------------------------------------------------------------------------------
+Mục tiêu: Hoàn thiện trận Boss cuối, âm thanh kinh dị, UI/UX và đóng gói bản Build.
+[ ] 4.1. Thiết kế khu vực Hành lang thoát hiểm Tầng Hầm & Boss `Subject Zero` (Mẫu Vật Số 0):
+         - Phase 1 (Lén lút & Bẫy môi trường): Dụ Boss lao vào khu vực rò rỉ điện / bình
+           khí gas để làm Boss choáng và lộ điểm yếu.
+         - Phase 2 (Tận dụng Năng lực Sao chép): Dùng `Dash` hoặc `Tàng hình` đã sao chép
+           để né đòn tất sát và xả súng / đâm dao vào điểm yếu của Boss.
+[ ] 4.2. Mở cửa thoát hiểm chính -> Cutscene kết thúc game (Victory) & Màn hình Game Over.
+[ ] 4.3. Âm thanh (Audio Design): Tiếng thở gấp khi mất máu, tiếng tim đập khi quái ở gần,
+         tiếng đèn huỳnh quang rè rè, tiếng bước chân quái vật 3D Spatial Audio.
+[ ] 4.4. Tối ưu hóa (Occlusion Culling, Lightmap Baking) và Build bản `.exe` hoàn chỉnh.
+
+
+================================================================================
+IV. PHÂN CHIA CẤU TRÚC THƯ MỤC CODE ĐỀ XUẤT TRONG UNITY
+================================================================================
+Để nhóm làm việc chung không bị xung đột file, nên tạo thư mục `Assets/evo-dna/Scripts`
+chia theo đúng các module sau:
+
+Assets/evo-dna/Scripts/
+ ├── Player/
+ │    ├── FirstPersonController.cs   (Di chuyển, Chạy, Cúi, Nhảy, Tạo tiếng động)
+ │    ├── PlayerHealth.cs            (Máu, Hồi máu có điều kiện, Chết & Respawn)
+ │    ├── FlashlightController.cs    (Phím Q bật/tắt đèn thường & đèn UV)
+ │    └── DNAAbilitySystem.cs        (Hấp thụ DNA, Lưu 1 kỹ năng, Kích hoạt Dash/Tàng hình)
+ ├── Interaction/
+ │    ├── IInteractable.cs           (Interface chung cho mọi vật thể tương tác)
+ │    ├── InteractionRaycast.cs      (Bắn tia từ giữa màn hình, hiện UI gợi ý)
+ │    ├── PhysicsGrabber.cs          (Chuột trái kéo/đẩy đồ vật)
+ │    └── HidingSpot.cs              (Trốn vào tủ Locker / gầm giường)
+ ├── Combat/
+ │    ├── WeaponManager.cs           (Đổi vũ khí: Phím E rút Dao, Phím F rút Súng)
+ │    ├── KnifeWeapon.cs             (Đâm cận chiến, độ bền 3 lần là gãy)
+ │    └── GunWeapon.cs               (Bắn chuột trái, nạp đạn chuột phải)
+ ├── AI/
+ │    ├── MonsterAI.cs               (State Machine: Patrol, Investigate, Chase, Attack, Dead)
+ │    ├── MonsterHearingAndSight.cs  (Cảm biến nghe tiếng động & tầm nhìn)
+ │    └── BossSubjectZeroAI.cs       (Logic Boss 2 Phase: Bẫy môi trường & Điểm yếu)
+ ├── Systems/
+ │    ├── InventoryManager.cs        (Túi đồ giữa dưới màn hình, mất đồ chưa save khi chết)
+ │    ├──SaveCheckpointSystem.cs     (Lưu trạng thái tại Safe Room / Trạm máy phát điện)
+ │    └── PowerAndElevatorSystem.cs  (Quản lý trạng thái Nguồn điện Tầng hầm & Thang máy)
+ └── Puzzles/
+      ├── KeypadPuzzle.cs            (Nhập mật mã mở cửa Phòng Lab / Phòng Giám đốc)
+      ├── KeycardDoor.cs             (Kiểm tra quyền Thẻ từ để mở cửa)
+      └── GeneratorRepairPuzzle.cs   (Lắp cầu chì & dây điện ở Tầng hầm)
+================================================================================
+
